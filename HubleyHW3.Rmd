@@ -38,6 +38,7 @@ names(Zambia_HH_2023)
 describe(Zambia_HH_2023)
 ```
 
+```{measure domains/units}
 length(unique(Zambia_HH_2023$Primary_sampling_unit)) 
 length(unique(Zambia_HH_2023$Sample_domain))
 length(unique(Zambia_HH_2023$Household_number)) 
@@ -52,32 +53,38 @@ max(range$Freq)
 length(unique(Zambia_HH_2023$Sample_domain)) 
 
 length(unique(Zambia_HH_2023$Sample_stratum_number)) 
+```
 
+```{set sample weight}
 Zambia_HH_2023$porw = Zambia_HH_2023$Sample_weight/1000000
+```
 
+```{first attempt at res. table}
 res_ITN <- table(Zambia_HH_2023$HH_residence, Zambia_HH_2023$HH_has_ITN)
 prop.table(HH_has_ITN,1)
 View (res_ITN)
+```
 
-Urban.ITN <- subset(Zambia_HH_2023, subset=(HH_residence=="Urban"))#creates subset featuring only HHs in urban areas
-attach(Urban.ITN)# makes objects in data frames (urban subset) accessible without actually typing the name of the data frame
+```{better way with se}
+Urban.ITN <- subset(Zambia_HH_2023, subset=(HH_residence=="Urban"))
+attach(Urban.ITN)
 
-Rural.ITN <- subset(Zambia_HH_2023, subset=(HH_residence=="Rural")) #creates subset featuring only HHs in rural areas
-attach(Rural.ITN)# make objects in data frames accessible (rural subset) without actually typing the name of the data frame
+Rural.ITN <- subset(Zambia_HH_2023, subset=(HH_residence=="Rural")) 
+attach(Rural.ITN)
 
-#Now we want to calculate the proportion (and standard error) of HHs in urban areas that have electricity:
 
-mean.urban <- mean(Urban.ITN$HH_has_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.urban #prints results
-se.urban <-sqrt(var(Urban.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(Urban.ITN$HH_has_ITN)))#calculates standard error
-se.urban# prints results
+mean.urban <- mean(Urban.ITN$HH_has_ITN)
+mean.urban 
+se.urban <-sqrt(var(Urban.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(Urban.ITN$HH_has_ITN)))
+se.urban
 
-#And in rural areas
-mean.rural <- mean(Rural.ITN$HH_has_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.rural #prints results
-se.rural <-sqrt(var(Rural.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(Rural.ITN$HH_has_ITN)))#calculates standard error
-se.rural# prints results
+mean.rural <- mean(Rural.ITN$HH_has_ITN)
+mean.rural 
+se.rural <-sqrt(var(Rural.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(Rural.ITN$HH_has_ITN)))
+se.rural
+```
 
+```{better way edu}
 edu_ITN <- table(Zambia_HH_2023$HH_head_education,Zambia_HH_2023$HH_has_ITN) 
 prop.table(edu_ITN,1)
 edu_ITN
@@ -111,7 +118,9 @@ mean.higher <- mean(Higher.ITN$HH_has_ITN)#Higher than
 mean.higher
 se.higher <-sqrt(var(Higher.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(Higher.ITN$HH_has_ITN)))
 se.higher
+```
 
+```{better way SES}
 lowestSES.ITN <- subset(Zambia_HH_2023, subset=(HH_wealth_index=="Lowest"))
 attach(lowestSES.ITN)
 lowSES.ITN <- subset(Zambia_HH_2023, subset=(HH_wealth_index=="Fourth"))
@@ -123,27 +132,29 @@ attach(richSES.ITN)
 richestSES.ITN <- subset(Zambia_HH_2023, subset=(HH_wealth_index=="Highes"))
 attach(richestSES.ITN)
 
-mean.lowest <- mean(lowestSES.ITN$HH_has_ITN) #No education
+mean.lowest <- mean(lowestSES.ITN$HH_has_ITN)
 mean.lowest
 se.lowest <-sqrt(var(lowestSES.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(lowestSES.ITN$HH_has_ITN)))
 se.lowest
-mean.low<- mean(lowSES.ITN$HH_has_ITN)#Primary
+mean.low<- mean(lowSES.ITN$HH_has_ITN)
 mean.low
 se.low <-sqrt(var(lowSES.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(lowSES.ITN$HH_has_ITN)))
 se.low
-mean.middle<- mean(middleSES.ITN$HH_has_ITN)#Secondary
+mean.middle<- mean(middleSES.ITN$HH_has_ITN)
 mean.middle
 se.middle <-sqrt(var(middleSES.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(middleSES.ITN$HH_has_ITN)))
 se.middle
-mean.rich <- mean(richSES.ITN$HH_has_ITN)#Higher than
+mean.rich <- mean(richSES.ITN$HH_has_ITN)
 mean.rich
 se.rich <-sqrt(var(richSES.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(richSES.ITN$HH_has_ITN)))
 se.rich
-mean.richest <- mean(richestSES.ITN$HH_has_ITN)#Higher than
+mean.richest <- mean(richestSES.ITN$HH_has_ITN)
 mean.richest
 se.richest <-sqrt(var(richestSES.ITN$HH_has_ITN,na.rm=TRUE)/length(na.omit(richestSES.ITN$HH_has_ITN)))
 se.richest
+```
 
+```{first try with weighted}
 ITN_urban_m <- weighted.mean(Urban.ITN$HH_has_ITN, Urban.ITN$porw, na.rm=TRUE)
 ITN_urban_m
 ITN_rural_m <- weighted.mean(Rural.ITN$HH_has_ITN, Rural.ITN$porw, na.rm=TRUE)
@@ -152,31 +163,43 @@ ITN_rural_m
 dim(Urban.ITN)
 dim(Rural.ITN)
 
+```
 
+```{make weighted function}
 DHSs_SRS_wtd<-svydesign(ids= ~1, weights=~porw, data=Zambia_HH_2023, nest=TRUE)
+```
 
+```{weighted SRS res}
 ITN.Res.SRS <- svyby(~HH_has_ITN, ~HH_residence, DHSs_SRS_wtd, svymean, na.rm=TRUE) #Residence
 ITN.Res.SRS
+```
 
-
+```{make cluster function and cluster res}
 DHS_Clstr_wtd<-svydesign(ids= ~Primary_sampling_unit, weights=~porw, data=Zambia_HH_2023, nest=TRUE)
 
 ITN.Res.Clstr <- svyby(~HH_has_ITN, ~HH_residence, DHS_Clstr_wtd, svymean, na.rm=TRUE) #Residence
 ITN.Res.Clstr
+```
 
-#Has electricity by education level
 
+```{cluster edu}
 ITN.Edu.Clstr<- svyby(~HH_has_ITN, ~HH_head_education, DHS_Clstr_wtd, svymean, na.rm=TRUE)
 ITN.Edu.Clstr
+```
 
+```{cluster and SRS weighted SES}
 ITN.SES.SRS<- svyby(~HH_has_ITN, ~HH_wealth_index, DHSs_SRS_wtd, svymean, na.rm=TRUE)
 ITN.SES.SRS
 
 ITN.SES.Clstr<- svyby(~HH_has_ITN, ~HH_wealth_index, DHS_Clstr_wtd, svymean, na.rm=TRUE)
 ITN.SES.Clstr
+```
 
+```{stratified cluster function}
 DHS_Clstr_strat <-svydesign(ids= ~Primary_sampling_unit, strata= ~Sample_stratum_number, weights=~porw,data=Zambia_HH_2023, nest=TRUE)
+```
 
+```{all measures stratified}
 ITN.Res.Strat <- svyby(~HH_has_ITN, ~HH_residence, DHS_Clstr_strat, svymean, na.rm=TRUE) #Residence
 ITN.Res.Strat
 
@@ -185,11 +208,15 @@ ITN.SES.Strat
 
 ITN.edu.Strat <- svyby(~HH_has_ITN, ~HH_head_education, DHS_Clstr_strat, svymean, na.rm=TRUE) 
 ITN.edu.Strat
+```
 
+```{read in child csv}
 zambia_child<-read.csv(file ="/Users/ClaireHubley/Documents/IHSDrstudio/IHSD_7440_HH_Sampling/2007_Zambia_Child_2023.csv")
 View(zambia_child)
+```
 
 
+```{rename, set weights, and describe child set}
 names(zambia_child)
 names(zambia_child)[names(zambia_child) == "V022"] <- "Sample_stratum_number"
 names(zambia_child)[names(zambia_child) == "V023"] <- "Sample_domain"
@@ -204,124 +231,125 @@ length(unique(zambia_child$Primary_sampling_unit))
 describe(zambia_child)
 
 zambia_child$porw = zambia_child$Sample_weight/1000000
+```
 
+```{SRS child all measures}
 res.ch_ITN <- table(zambia_child$HH_residence, zambia_child$Slept_ITN)
 prop.table(res.ch_ITN,1)
 View (res.ch_ITN)
 
-Urban.chITN <- subset(zambia_child, subset=(HH_residence=="Urban"))#creates subset featuring only HHs in urban areas
-attach(Urban.ITN)# makes objects in data frames (urban subset) accessible without actually typing the name of the data frame
+Urban.chITN <- subset(zambia_child, subset=(HH_residence=="Urban"))
+attach(Urban.ITN)
 
-Rural.chITN <- subset(zambia_child, subset=(HH_residence=="Rural")) #creates subset featuring only HHs in rural areas
+Rural.chITN <- subset(zambia_child, subset=(HH_residence=="Rural")) 
 attach(Rural.chITN)
 
-mean.churban <- mean(Urban.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.churban #prints results
-se.churban <-sqrt(var(Urban.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(Urban.chITN$Slept_ITN)))#calculates standard error
-se.churban# prints results
+mean.churban <- mean(Urban.chITN$Slept_ITN)
+mean.churban
+se.churban <-sqrt(var(Urban.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(Urban.chITN$Slept_ITN)))
+se.churban
 
-#And in rural areas
-mean.chrural <- mean(Rural.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.chrural #prints results
-se.chrural <-sqrt(var(Rural.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(Rural.chITN$Slept_ITN)))#calculates standard error
+mean.chrural <- mean(Rural.chITN$Slept_ITN)
+mean.chrural 
+se.chrural <-sqrt(var(Rural.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(Rural.chITN$Slept_ITN)))
 se.chrural
 
-zero.chITN <- subset(zambia_child, subset=(Child_age==0))#creates subset featuring only HHs in urban areas
-attach(zero.chITN)# makes objects in data frames (urban subset) accessible without actually typing the name of the data frame
+zero.chITN <- subset(zambia_child, subset=(Child_age==0))
+attach(zero.chITN)
 
-one.chITN <- subset(zambia_child, subset=(Child_age==1)) #creates subset featuring only HHs in rural areas
+one.chITN <- subset(zambia_child, subset=(Child_age==1)) 
 attach(one.chITN)
 
-two.chITN <- subset(zambia_child, subset=(Child_age==2)) #creates subset featuring only HHs in rural areas
+two.chITN <- subset(zambia_child, subset=(Child_age==2)) 
 attach(two.chITN)
 
-three.chITN <- subset(zambia_child, subset=(Child_age==3)) #creates subset featuring only HHs in rural areas
+three.chITN <- subset(zambia_child, subset=(Child_age==3)) 
 attach(three.chITN)
 
-four.chITN <- subset(zambia_child, subset=(Child_age==4)) #creates subset featuring only HHs in rural areas
+four.chITN <- subset(zambia_child, subset=(Child_age==4)) 
 attach(four.chITN)
 
-mean.ch.zero <- mean(zero.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.zero #prints results
-se.ch.zero <-sqrt(var(zero.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(zero.chITN$Slept_ITN)))#calculates standard error
-se.ch.zero# prints results
+mean.ch.zero <- mean(zero.chITN$Slept_ITN)
+mean.ch.zero 
+se.ch.zero <-sqrt(var(zero.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(zero.chITN$Slept_ITN)))
+se.ch.zero 
 
-mean.ch.one <- mean(one.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.one #prints results
-se.ch.one <-sqrt(var(one.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(one.chITN$Slept_ITN)))#calculates standard error
-se.ch.one # prints results
+mean.ch.one <- mean(one.chITN$Slept_ITN)
+mean.ch.one 
+se.ch.one <-sqrt(var(one.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(one.chITN$Slept_ITN)))
+se.ch.one 
 
-mean.ch.two <- mean(two.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.two #prints results
-se.ch.two <-sqrt(var(two.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(two.chITN$Slept_ITN)))#calculates standard error
-se.ch.two # prints results
+mean.ch.two <- mean(two.chITN$Slept_ITN)
+mean.ch.two 
+se.ch.two <-sqrt(var(two.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(two.chITN$Slept_ITN)))
+se.ch.two 
 
-mean.ch.three <- mean(three.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.three #prints results
-se.ch.three <-sqrt(var(three.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(three.chITN$Slept_ITN)))#calculates standard error
-se.ch.three # prints results
+mean.ch.three <- mean(three.chITN$Slept_ITN)
+mean.ch.three 
+se.ch.three <-sqrt(var(three.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(three.chITN$Slept_ITN)))
+se.ch.three 
 
-mean.ch.four <- mean(four.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.four #prints results
-se.ch.four <-sqrt(var(four.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(four.chITN$Slept_ITN)))#calculates standard error
-se.ch.four # prints results
+mean.ch.four <- mean(four.chITN$Slept_ITN)
+mean.ch.four 
+se.ch.four <-sqrt(var(four.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(four.chITN$Slept_ITN)))
+se.ch.four 
 
-poorest.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Lowest")) #creates subset featuring only HHs in rural areas
+poorest.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Lowest")) 
 attach(poorest.chITN)
 
-poor.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Fourth")) #creates subset featuring only HHs in rural areas
+poor.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Fourth")) 
 attach(poor.chITN)
 
-middle.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Middle")) #creates subset featuring only HHs in rural areas
+middle.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Middle")) 
 attach(middle.chITN)
 
-rich.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Second")) #creates subset featuring only HHs in rural areas
+rich.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Second")) 
 attach(rich.chITN)
 
-richest.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Highes")) #creates subset featuring only HHs in rural areas
+richest.chITN <- subset(zambia_child, subset=(HH_wealth_index=="Highes")) 
 attach(richest.chITN)
 
-mean.ch.lowest <- mean(poorest.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.lowest #prints results
-se.ch.lowest <-sqrt(var(poorest.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(poorest.chITN$Slept_ITN)))#calculates standard error
-se.ch.lowest # prints results
+mean.ch.lowest <- mean(poorest.chITN$Slept_ITN)
+mean.ch.lowest 
+se.ch.lowest <-sqrt(var(poorest.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(poorest.chITN$Slept_ITN)))
+se.ch.lowest 
 
-mean.ch.low <- mean(poor.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.low #prints results
-se.ch.low <-sqrt(var(poor.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(poor.chITN$Slept_ITN)))#calculates standard error
-se.ch.low # prints results
+mean.ch.low <- mean(poor.chITN$Slept_ITN)
+mean.ch.low 
+se.ch.low <-sqrt(var(poor.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(poor.chITN$Slept_ITN)))
+se.ch.low 
 
-mean.ch.middle <- mean(middle.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.middle #prints results
-se.ch.middle <-sqrt(var(middle.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(middle.chITN$Slept_ITN)))#calculates standard error
-se.ch.middle # prints results
+mean.ch.middle <- mean(middle.chITN$Slept_ITN)
+mean.ch.middle 
+se.ch.middle <-sqrt(var(middle.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(middle.chITN$Slept_ITN)))
+se.ch.middle 
 
-mean.ch.rich <- mean(rich.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.rich #prints results
-se.ch.rich <-sqrt(var(rich.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(rich.chITN$Slept_ITN)))#calculates standard error
-se.ch.rich # prints results
+mean.ch.rich <- mean(rich.chITN$Slept_ITN)
+mean.ch.rich 
+se.ch.rich <-sqrt(var(rich.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(rich.chITN$Slept_ITN)))
+se.ch.rich 
 
-mean.ch.richest <- mean(richest.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.richest #prints results
-se.ch.richest <-sqrt(var(richest.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(richest.chITN$Slept_ITN)))#calculates standard error
-se.ch.richest # prints results
+mean.ch.richest <- mean(richest.chITN$Slept_ITN)#
+mean.ch.richest 
+se.ch.richest <-sqrt(var(richest.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(richest.chITN$Slept_ITN)))
+se.ch.richest 
 
-noedu.chITN <- subset(zambia_child, subset=(Mother_education=="No education")) #creates subset featuring only HHs in rural areas
+noedu.chITN <- subset(zambia_child, subset=(Mother_education=="No education")) 
 attach(noedu.chITN)
 
-predu.chITN <- subset(zambia_child, subset=(Mother_education=="Primary")) #creates subset featuring only HHs in rural areas
+predu.chITN <- subset(zambia_child, subset=(Mother_education=="Primary")) 
 attach(predu.chITN)
 
-seedu.chITN <- subset(zambia_child, subset=(Mother_education=="Secondary")) #creates subset featuring only HHs in rural areas
+seedu.chITN <- subset(zambia_child, subset=(Mother_education=="Secondary")) 
 attach(seedu.chITN)
 
-htedu.chITN <- subset(zambia_child, subset=(Mother_education=="Higher than")) #creates subset featuring only HHs in rural areas
+htedu.chITN <- subset(zambia_child, subset=(Mother_education=="Higher than")) 
 attach(htedu.chITN)
 
-mean.ch.noedu <- mean(noedu.chITN$Slept_ITN)# Calculates the proportion of people living in urban areas with electricity
-mean.ch.noedu #prints results
-se.ch.noedu <-sqrt(var(noedu.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(noedu.chITN$Slept_ITN)))#calculates standard error
-se.ch.noedu # prints results
+mean.ch.noedu <- mean(noedu.chITN$Slept_ITN)
+mean.ch.noedu 
+se.ch.noedu <-sqrt(var(noedu.chITN$Slept_ITN,na.rm=TRUE)/length(na.omit(noedu.chITN$Slept_ITN)))
+se.ch.noedu 
 
 mean.ch.predu <- mean(predu.chITN$Slept_ITN)
 mean.ch.predu 
@@ -340,20 +368,51 @@ ITN_rural_chm
 
 DHSs_SRS_wtd<-svydesign(ids= ~1, weights=~porw, data=zambia_child, nest=TRUE)
 
-ITN.chRes.SRS <- svyby(~Slept_ITN, ~HH_residence, DHSs_SRS_wtd, svymean, na.rm=TRUE) #Residence
+ITN.chRes.SRS <- svyby(~Slept_ITN, ~HH_residence, DHSs_SRS_wtd, svymean, na.rm=TRUE) 
 ITN.chRes.SRS
 
 DHS_chClstr_wtd<-svydesign(ids= ~Primary_sampling_unit, weights=~porw, data=zambia_child, nest=TRUE)
 
-ITN.chRes.Clstr <- svyby(~Slept_ITN, ~HH_residence, DHS_chClstr_wtd, svymean, na.rm=TRUE) #Residence
+ITN.chRes.Clstr <- svyby(~Slept_ITN, ~HH_residence, DHS_chClstr_wtd, svymean, na.rm=TRUE) 
 ITN.chRes.Clstr
 
 DHS_chClstr_strat <-svydesign(ids= ~Primary_sampling_unit, strata= ~Sample_stratum_number, weights=~porw,data=zambia_child, nest=TRUE)
 
-ITN.chRes.Strat <- svyby(~Slept_ITN, ~HH_residence, DHS_chClstr_strat, svymean, na.rm=TRUE) #Residence
+ITN.chRes.Strat <- svyby(~Slept_ITN, ~HH_residence, DHS_chClstr_strat, svymean, na.rm=TRUE) 
 ITN.chRes.Strat
 
 ITN_zero_chm <- weighted.mean(zero.chITN$Slept_ITN, zero.chITN$porw, na.rm=TRUE)
 ITN_zero_chm
 ITN_one_chm <- weighted.mean(one.chITN$Slept_ITN, one.chITN$porw, na.rm=TRUE)
 ITN_one_chm
+
+ITN.chage.SRS <- svyby(~Slept_ITN, ~Child_age, DHSs_SRS_wtd, svymean, na.rm=TRUE)
+ITN.chage.SRS
+
+ITN.chSES.SRS <- svyby(~Slept_ITN, ~HH_wealth_index, DHSs_SRS_wtd, svymean, na.rm=TRUE)
+ITN.chSES.SRS
+
+ITN.chedu.SRS <- svyby(~Slept_ITN, ~Mother_education, DHSs_SRS_wtd, svymean, na.rm=TRUE)
+ITN.chedu.SRS
+
+DHS_chClstr_wtd<-svydesign(ids= ~Primary_sampling_unit, weights=~porw, data=zambia_child, nest=TRUE)
+
+ITN.chage.Clstr <- svyby(~Slept_ITN, ~Child_age, DHS_chClstr_wtd, svymean, na.rm=TRUE) 
+ITN.chage.Clstr
+
+ITN.chSES.Clstr <- svyby(~Slept_ITN, ~HH_wealth_index, DHS_chClstr_wtd, svymean, na.rm=TRUE) 
+ITN.chSES.Clstr
+
+ITN.chedu.Clstr <- svyby(~Slept_ITN, ~Mother_education, DHS_chClstr_wtd, svymean, na.rm=TRUE) 
+ITN.chedu.Clstr
+
+ITN.chage.Strat <- svyby(~Slept_ITN, ~Child_age, DHS_chClstr_strat, svymean, na.rm=TRUE) 
+ITN.chage.Strat
+
+ITN.chSES.Strat <- svyby(~Slept_ITN, ~HH_wealth_index, DHS_chClstr_strat, svymean, na.rm=TRUE) 
+ITN.chSES.Strat
+
+ITN.chedu.Strat <- svyby(~Slept_ITN, ~Mother_education, DHS_chClstr_strat, svymean, na.rm=TRUE) 
+ITN.chedu.Strat
+``` 
+
