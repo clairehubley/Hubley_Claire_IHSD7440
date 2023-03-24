@@ -1,5 +1,15 @@
+---
+title: "HubleyHW3"
+author: "Claire Hubley"
+date: "2023-03-24"
+output: html_document
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
+``` {r libraries}
 library(tidyverse)
 library(tidyverse)
 library(haven)
@@ -11,7 +21,9 @@ library(survey)
 #library(srvyr)
 #install.packages("weights")
 library(weights)
+```
 
+```{r rename}
 View(Zambia_HH_2023 )
 names(Zambia_HH_2023)
 names(Zambia_HH_2023)[names(Zambia_HH_2023) == "HV022"] <- "Sample_stratum_number"
@@ -24,7 +36,7 @@ names(Zambia_HH_2023)[names(Zambia_HH_2023) == "HV021"] <- "Primary_sampling_uni
 names(Zambia_HH_2023)
 
 describe(Zambia_HH_2023)
-
+```
 
 length(unique(Zambia_HH_2023$Primary_sampling_unit)) 
 length(unique(Zambia_HH_2023$Sample_domain))
@@ -340,3 +352,8 @@ DHS_chClstr_strat <-svydesign(ids= ~Primary_sampling_unit, strata= ~Sample_strat
 
 ITN.chRes.Strat <- svyby(~Slept_ITN, ~HH_residence, DHS_chClstr_strat, svymean, na.rm=TRUE) #Residence
 ITN.chRes.Strat
+
+ITN_zero_chm <- weighted.mean(zero.chITN$Slept_ITN, zero.chITN$porw, na.rm=TRUE)
+ITN_zero_chm
+ITN_one_chm <- weighted.mean(one.chITN$Slept_ITN, one.chITN$porw, na.rm=TRUE)
+ITN_one_chm
