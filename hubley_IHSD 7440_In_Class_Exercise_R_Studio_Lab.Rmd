@@ -1,0 +1,310 @@
+---
+title: "IHSD 7440 In Class Exercise: R Studio Lab"
+author: "Claire Hubley"
+date: "2023-03-07"
+output: 
+  html_notebook: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is an R Markdown document that illustrates the necessary steps and code to analyze DHS data in the context of several sampling approaches: SRS, Cluster sampling, and Cluster stratified sampling.
+
+The data used is from the 2009 Kenya DHS.  These data were collected using the standard DHS sampling protocol, which consists of a 2-stage cluster design with first stage selection of primary sampling units selected proportional to their size (PPS).  All women of reproductive age were asked for information of their children.  Independent samples were selected within regional survey domains.  Within each survey domain, data were collected using a proportional stratification system to improve the precision of the estimates.  For all household and child-level data, sample weights were created based on relative strata sizes, and on the difference between estimated cluster size (M) and actual cluster size (B).
+
+The sampling weight will affect the calculation of the point estimate, and the stratification and/or clustering will affect the calculation of the standard errors. Ignoring the clustering will likely lead to standard errors that are underestimated, possibly leading to results that seem to be statistically significant, when in fact, they are not. This is why it is important to consider the sampling strategy used to collect your data when analyzing it!
+
+```{r preamble, warning= FALSE}
+#----------------------------------------------------------------------------#
+#                                                                            #
+# In-Class Assignment script: a R notebook for HH survey data analysis       #
+#                                                                            #
+#    A.J.Young March 7th 2023  ayoung1@tulane.edu                            #
+#                                                                            #
+#    This script is a demonstration of the basic principles of               #
+#    developing a literate program as well as some basics of conducting      #
+#    descriptive statistics on select DHS data using correct sampling        #
+#    weights and and analytical approaches                                   #
+#                                                                            #
+#                                                                            #
+#----------------------------------------------------------------------------#
+
+# loading required libraries ----
+library(tidyverse)
+library(haven)
+library(formatR)
+library(Hmisc)
+#install.packages("survey") 
+library(survey)
+#install.packages("srvyr")
+#library(srvyr)
+#install.packages("weights")
+library(weights)
+#set any other options ----
+
+```
+
+## Compile date and session info
+
+```{r docinfo, echo = FALSE, warning= FALSE}
+
+# print and get runtime ----
+date()
+
+# session info ----
+sessionInfo()
+
+```
+## Step 1: Import and investigate dataset
+
+```{r load, tidy = TRUE}
+
+# Import data set in .csv format and create object(data.frame) titled "kenya_2009_df"
+
+#kenya_2009_df <- read_csv(file = "C:\\Users\\ayoung1\\OneDrive\\Documents\\PhD\\TA\\IHSD 7440 HH sampling\\2023\\RStudio Lab\\kenya2009_household_1.csv")
+
+
+kenya_2009_df <-read.csv(file = "/Users/ClaireHubley/Documents/IHSDrstudio/IHSD_7440_HH_Sampling/kenya2009_household_1.csv")
+
+# View data set in new window
+View(kenya_2009_df)
+
+```
+
+DHS data sets are compiled in a specific way so that the following variable names correspond with specific indicators/units:
+
+HV022 = sample stratum number;
+HV023 = sample domain;
+HV002 = household number;
+HV005 = sample weight;
+HV009 = number of household members;
+HV014 = number of children 5 and under;
+HV021 = primary sampling unit;
+HV206 = has electricity;
+HV237 = water treated;
+HV237B= water treated with bleach or chlorine;
+HML1  = number of mosquito nets;
+SH125A = HH sprayed with IRS
+
+Here, HH_res corresponds with urban versus rural residence, HH_edu indicates degree of education, and SES indicates wealth index classification.
+
+We will now ask some preliminary questions to understand how our data is organized
+
+1.) What is your element in this analysis and how many are there (n)? 
+
+```{r elements}
+describe(kenya_2009_df)
+```
+
+When running the "describe" command, we can see that there 9057 observations in our data set. Our variables are labeled using the DHS notation, but we can re-label them so that we can more easily see what indicator/unit they specifically correspond with, using the definitions provided in lines 65-73
+
+```{r mames}
+names(kenya_2009_df)
+names(kenya_2009_df)[names(kenya_2009_df) == "HV022"] <- "Sample_stratum_number"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV023"] <- "Sample_domain"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV002"] <- "Household_number"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV005"] <- "Sample_weight"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV009"] <- "Number_HH_members"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV014"] <- "Number_children_5_under"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV021"] <- "Primary_sampling_unit"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV206"] <- "Has_electricity"
+names(kenya_2009_df)[names(kenya_2009_df) == "HML1"]  <- "Number_ITNs"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV237"] <- "Water_treated"
+names(kenya_2009_df)[names(kenya_2009_df) == "SH125A"] <- "IRS"
+names(kenya_2009_df)[names(kenya_2009_df) == "HV237B"] <- "Water_treated_blch_chlr"
+names(kenya_2009_df)
+
+describe(kenya_2009_df)
+```
+We can see that the element in this analysis is Households, and that there are 9057 observations
+
+2.) How many clusters are there in this sample?  
+
+
+```{r clusters}
+length(unique(kenya_2009_df$Primary_sampling_unit)) 
+# this line of code will return the number of unique observations (i.e number of clusters) within your primary sampling unit variable (remember clusters are our PSU here)
+```
+
+We can see that there are 398 clusters in this data set.
+
+3.) How many survey domains are there in this data set? 
+
+```{r domains}
+length(unique(kenya_2009_df$Sample_domain)) 
+```
+We can see that there are 8 unique survey domains in this data set
+
+## Step 2: Calculate proportions and standard errors for select indicators assuming SRS without weights
+
+We want to create a table that shows the proportion of households with electricity in urban verus rural settings.  For column d, we need to analyze the data appropriately, taking into account the following: 1) the use of a 2-stage cluster design that results in correlated data at the cluster / PSU level; 2) adjustment for differences in the ultimate probability of selection through sampling weights; and 3) uses the strata information to improve the precision of your estimates. In order to calculate proportions assuming weights, we have to create a new variable where we define how to calculate our weight. Standard practice is to take the DHS sample weight variable and divide it by 1000000. We will go ahead and create this variable now, although we will first focus on calculating proportions without weights and will not introduce any weighted survey data analysis until Step 3.
+
+```{r set weight}
+
+kenya_2009_df$pw<- kenya_2009_df$Sample_weight/1000000 #Here we are creating a new variable "pw" in our primary data set that corresponds with the calculated weight
+
+```
+
+We want to find the proportion of HHs with electricity given some criteria, assuming SRS. There are several ways to do this. We can run a command that produces a table featuring proportions of the sampled population residing in urban versus rural areas that have electricity. Note, however that the syntax provided for this will not return standard errors.
+
+```{r SRS res, warning = FALSE, message = FALSE}
+
+#1) Urban versus rural settings
+
+res_electricity <- table(kenya_2009_df$HH_res,kenya_2009_df$Has_electricity)
+prop.table(res_electricity,1) # inclusion of 1 here tells R that you want to calculate row proportions
+
+#If we want to calculate the proportions and standard errors individually we can take our main data set and create a subset of samples for Urban versus Rural categorizations
+
+
+Urban.electr <- subset(kenya_2009_df, subset=(HH_res=="Urban"))#creates subset featuring only HHs in urban areas
+attach(Urban.electr)# makes objects in data frames (urban subset) accessible without actually typing the name of the data frame
+
+Rural.electr <- subset(kenya_2009_df, subset=(HH_res=="Rural")) #creates subset featuring only HHs in rural areas
+attach(Rural.electr)# make objects in data frames accessible (rural subset) without actually typing the name of the data frame
+
+#Now we want to calculate the proportion (and standard error) of HHs in urban areas that have electricity:
+
+mean.urban <- mean(Urban.electr$Has_electricity)# Calculates the proportion of people living in urban areas with electricity
+mean.urban #prints results
+se.urban <-sqrt(var(Urban.electr$Has_electricity,na.rm=TRUE)/length(na.omit(Urban.electr$Has_electricity)))#calculates standard error
+se.urban# prints results
+
+#And in rural areas
+mean.rural <- mean(Rural.electr$Has_electricity)# Calculates the proportion of people living in urban areas with electricity
+mean.rural #prints results
+se.rural <-sqrt(var(Rural.electr$Has_electricity,na.rm=TRUE)/length(na.omit(Rural.electr$Has_electricity)))#calculates standard error
+se.rural# prints results
+```
+
+``` {r SRS edu, warning = FALSE, message = FALSE}
+#2) Education level
+
+# Using prop table approach (no standard errors)
+edu_electricity <- table(kenya_2009_df$HH_edu,kenya_2009_df$Has_electricity) 
+prop.table(edu_electricity,1)
+
+#Using subset approach (means and standard errors) for each category/value under the HH_edu variable
+Noedu.electr <- subset(kenya_2009_df, subset=(HH_edu=="No_education"))
+attach(Noedu.electr)
+Primary.electr <- subset(kenya_2009_df, subset=(HH_edu=="Primary"))
+attach(Primary.electr)
+Secondary.electr <- subset(kenya_2009_df, subset=(HH_edu=="Secondary"))
+attach(Secondary.electr)
+Higher.electr <- subset(kenya_2009_df, subset=(HH_edu=="Higher_than"))
+attach(Higher.electr)
+
+mean.none <- mean(Noedu.electr$Has_electricity) #No education
+mean.none
+se.none <-sqrt(var(Noedu.electr$Has_electricity,na.rm=TRUE)/length(na.omit(Noedu.electr$Has_electricity)))
+se.none
+mean.primary<- mean(Primary.electr$Has_electricity)#Primary
+mean.primary
+se.primary <-sqrt(var(Primary.electr$Has_electricity,na.rm=TRUE)/length(na.omit(Primary.electr$Has_electricity)))
+se.primary
+mean.secondary<- mean(Secondary.electr$Has_electricity)#Secondary
+mean.secondary
+se.secondary <-sqrt(var(Secondary.electr$Has_electricity,na.rm=TRUE)/length(na.omit(Secondary.electr$Has_electricity)))
+se.secondary
+mean.higher <- mean(Higher.electr$Has_electricity)#Higher than
+mean.higher
+se.higher <-sqrt(var(Higher.electr$Has_electricity,na.rm=TRUE)/length(na.omit(Higher.electr$Has_electricity)))
+se.higher
+```
+
+## Step 3: Calculate proportions and standard errors of select indicators assuming SRS with weights
+
+We now want to calculate weighted  proportions assuming an SRS sampling strategywe want to apply weights when calcluating our standard errors. The code below will return the correct means/proportions, however it will not cacluate your weighted standard error- this approach is not recommended.
+
+
+```{r SRS with weights}
+
+#1) Urban versus rural settings (proportions and standard deviations)
+
+electricity_urban_m <- weighted.mean(Urban.electr$Has_electricity, Urban.electr$pw, na.rm=TRUE)
+electricity_urban_m
+electricity_rural_m <- weighted.mean(Rural.electr$Has_electricity, Rural.electr$pw, na.rm=TRUE)
+electricity_rural_m
+
+dim(Rural.electr)
+dim(Urban.electr)
+
+#notice, though how this approach does not return standard errors relative to sampling approach (SRS with weights)
+```
+
+To calculate proportions AND standard errors assuming SRS with weights, we can create a function where we tell R Studio how we want our proportions to be calculated given our sampling strategy.
+
+``` {r SRS weight}
+
+DHS_SRS_wtd<-svydesign(ids= ~1, weights=~pw,data=kenya_2009_df, nest=TRUE) #inclusion of ids= ~1 indicates no clustering (remember we are still assuming SRS at this point)
+
+```
+
+We can then calculate proportions and weighted standard errors, given some criteria (Residence or education level,for example), in the same table (i.e. we don't have to individually calcluate each proportion and standard error as we did in Step 1). The "svyby" command is part of the svyr package, which was loaded at the beginning of the .rmd file. 
+
+``` {r SRS wtd prop}
+
+# Has electricity in rural versus urban settings
+Elect.Res.SRS <- svyby(~Has_electricity, ~HH_res, DHS_SRS_wtd, svymean, na.rm=TRUE) #Residence
+Elect.Res.SRS
+
+#Has electricity by education level
+
+Elect.Edu.SRS<- svyby(~Has_electricity, ~HH_edu, DHS_SRS_wtd, svymean, na.rm=TRUE)
+Elect.Edu.SRS
+```
+## Step 4: Calculate proportions and standard errors of select indicators assuming 2-Stage Cluster sampling with weights
+
+We now need to re-specify our survey design to reflect 2-Stage cluster sampling with weights. We will use the same syntax as when creating the SRS with weights survey design function, however will need to update our "ids" to correspond with our primary sampling unit, so that R Studio can see that our data is now clustered. 
+
+```{r Cluster weights}
+
+DHS_Clstr_wtd<-svydesign(ids= ~Primary_sampling_unit, weights=~pw,data=kenya_2009_df, nest=TRUE)
+```
+
+``` {r Cluster wtd prop}
+
+# Has electricity in rural versus urban settings
+Elect.Res.Clstr <- svyby(~Has_electricity, ~HH_res, DHS_Clstr_wtd, svymean, na.rm=TRUE) #Residence
+Elect.Res.Clstr
+
+#Has electricity by education level
+
+Elect.Edu.Clstr<- svyby(~Has_electricity, ~HH_edu, DHS_Clstr_wtd, svymean, na.rm=TRUE)
+Elect.Edu.Clstr
+```
+
+## Step 5: Calculate proportions and standard errors of select indicators assuming 2-Stage Cluster sampling with weights and stratification
+
+Here we need to create another function to implement/apply our survey design (2-Stage Cluster sampling with stratification) when calculating our proportions and standard errors.
+
+```{r CWS}
+
+DHS_Clstr_strat <-svydesign(ids= ~Primary_sampling_unit, strata= ~Sample_stratum_number, weights=~pw,data=kenya_2009_df, nest=TRUE)
+
+#note here that we have not specified 2-stage cluster sampling. As multistage sampling has no effect when fpc is not provided (for example with this data set), we do not need to specific 2-stage cluster sampling here when defining our "ids".
+```
+
+We can then calculate in a table format our desired proportions and standard errors, given specific criteria (rural versus urban residence, etc.) and save it as an object, as we did in Steps 3 and 4. 
+
+```{r CWS props}
+
+Elect.Res.Strat <- svyby(~Has_electricity, ~HH_res, DHS_Clstr_strat, svymean, na.rm=TRUE) #Residence
+Elect.Res.Strat
+
+Elect.Edu.Strat <- svyby(~Has_electricity, ~HH_edu, DHS_Clstr_strat, svymean, na.rm=TRUE) #Education level
+Elect.Edu.Strat
+```
+``` {r Table 3}
+
+
+Water.Trt.SRS <- svyby(~Water_treated_blch_chlr, ~Water_treated, DHS_SRS_wtd, svymean, na.rm=TRUE) #Water treated with bleach or chlorine
+Water.Trt.SRS
+
+
+```
