@@ -38,15 +38,13 @@ sessionInfo()
 ## Step 1: Import and investigate datasets
 ```{r load, tidy = TRUE}
 
-# Import data set in .csv format and create object(data.frame) titled "kenya_2009_df"
+Zambia_HH_2023 <- read_csv("/Users/ClaireHubley/Documents/IHSDrstudio/IHSD_7440_HH_Sampling/2007_Zambia_HH_2023.csv")
 
-Zambia_HH_df <- read_csv(file = "C:\\Users\\ayoung1\\OneDrive\\Documents\\PhD\\TA\\IHSD 7440 HH sampling\\2023\\RStudio Lab\\2007_Zambia_HH_2023.csv")
-
-Zambia_chld_df <- read_csv(file = "C:\\Users\\ayoung1\\OneDrive\\Documents\\PhD\\TA\\IHSD 7440 HH sampling\\2023\\RStudio Lab\\2007_Zambia_Child_2023.csv")
+zambia_child <- read_csv(file = "/Users/ClaireHubley/Documents/IHSDrstudio/IHSD_7440_HH_Sampling/2007_Zambia_Child.csv")
 
 # View data set in new window
-View(Zambia_HH_df)
-View(Zambia_chld_df)
+View(Zambia_HH_2023)
+View(zambia_child)
 
 ```
 
