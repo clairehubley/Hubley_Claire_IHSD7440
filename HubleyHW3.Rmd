@@ -443,3 +443,9 @@ ITN.chedu.Strat <- svyby(~Slept_ITN, ~Mother_education, DHS_chClstr_strat, svyme
 ITN.chedu.Strat
 ``` 
 
+```{retrying 1d and 1e}
+length(unique(Zambia_HH_2023$Sample_stratum_number))
+length(unique(Zambia_HH_2023$Sample_domain))
+```
+
+length(unique(Zambia_HH_2023$Sample_domain))
