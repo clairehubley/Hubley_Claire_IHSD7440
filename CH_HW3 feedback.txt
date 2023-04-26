@@ -1,0 +1,7 @@
+Claire Hubley Homework #3
+
+General feedback:
+- Fantastic job! Only issues I saw were with calculating the proprotions and standard errors for your totals in each table (bottom row)
+- I've included in the word doc example code you could use if you want to recalculate these, and then your design effects.
+
+Initial grade= 33/35
